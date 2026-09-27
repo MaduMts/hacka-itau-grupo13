@@ -1,0 +1,16 @@
+# Ambiente Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Segredos: chave da API nunca vai para o repositório
+.env
+.streamlit/secrets.toml
+
+# Dados gerados e registros locais
+data/gerados/
+registros/*.jsonl
+
+# Sistema
+.DS_Store
