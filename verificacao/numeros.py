@@ -183,6 +183,7 @@ def rotulos_do_registro(registro: RegistroConsultas) -> list[str]:
         janela = r.params.get("janela_min")
         if janela is not None:
             rotulos.update({f"{janela} min", f"{janela} minutos"})
+        rotulos.update(k.split(":", 1)[1] for k in r.geral if k.startswith("faixa:"))  # "<1 min", "1–5 min"...
     return sorted(rotulos)
 
 

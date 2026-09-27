@@ -36,7 +36,7 @@ def rotular(c: Candidata, rep: Replica, verificada: bool) -> tuple[Rotulo, str, 
         return Rotulo.HIPOTESE, "R2", "Explicação causal: depende de Research ou experimento."
     if rep.familia == "comportamental":
         return Rotulo.HIPOTESE, "R2", "Comportamento medido sem comparação entre grupos: o dado mostra quanto; o porquê fica com a Research."
-    if grupo is None:
+    if grupo is None or grupo == "todos":
         return Rotulo.HIPOTESE, "R2", "Sem grupo de comparação: o dado mostra quanto; o porquê fica com a Research."
     la, lb = rep.linha_a, rep.linha_b
     if la is None or la.suprimido:

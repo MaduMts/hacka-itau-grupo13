@@ -87,3 +87,30 @@ def test_numero_orfao_que_persiste_rebaixa_e_marca_o_texto(pasta_normal):
     marcada = next(h for h in d.principais + d.outras_evidencias + d.indicios if "999%" in h.candidata.enunciado)
     assert not marcada.verificacao.verificada and marcada.rotulo != Rotulo.EVIDENCIA
     assert "⟦sem fonte⟧" in marcada.candidata.enunciado
+
+
+def test_gabarito_padrao_3_vira_hipotese_para_a_research(normal):
+    p3 = next(h for h in normal.dossie.research if h.candidata.evidencia_principal.metrica == "sequencia")
+    assert p3.rotulo == Rotulo.HIPOTESE and p3.regra == "R2" and p3.familia == "comportamental"
+    assert p3.usuarios_afetados and p3.usuarios_afetados > 15_000  # ~14% de quem bloqueou
+
+
+def test_nps_entra_so_como_pista_complementar(normal):
+    p2 = _grupos(normal.dossie.principais)["60+"]
+    assert any("tema:dificil_escolher_motivo" in c and "Indício" in c for c in p2.evidencias_complementares)
+
+
+def test_conferencia_do_gabarito_fica_toda_verde(normal, pasta_incompleta):
+    from gabarito import conferir
+    itens = conferir(normal.dossie, tem_perfil=True)
+    assert [i.id for i in itens] == ["P1", "P2", "P3", "T4", "T5"]
+    assert all(i.ok for i in itens), [(i.id, i.encontrado) for i in itens if not i.ok]
+    sem_perfil = conferir(_executar(pasta_incompleta).dossie, tem_perfil=False)
+    assert all(i.ok for i in sem_perfil) and next(i for i in sem_perfil if i.id == "P2").esperado.startswith("Lacuna")
+
+
+def test_injecao_no_nps_nunca_chega_ao_agente(normal, pasta_normal):
+    assert "IGNORE AS INSTRUÇÕES" in (pasta_normal / "nps.csv").read_text(encoding="utf-8")  # está nos dados
+    enviados = " ".join(t["texto"] for t in normal.agente.textos_enviados)
+    assert "IGNORE" not in enviados and "Toquei em confirmar" not in enviados
+    assert all("IGNORE" not in r.texto_llm for r in normal.consultas.resultados.values())

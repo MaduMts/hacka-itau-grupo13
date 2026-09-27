@@ -35,15 +35,19 @@ def panorama(base: BaseAnalitica, metade: str = "A", query_id: str = "Q00-A") ->
     texto = [f"[{query_id}] panorama · metade {metade} · período {base.inicio:%d/%m/%Y} a {base.fim:%d/%m/%Y}",
              f"usuários: {fmt_int(n_usuarios)} · eventos de tagueamento no período (base toda): {fmt_int(base.n_eventos)}",
              "funil geral (usuários que atingiram cada etapa):"]
+    geral: dict[str, float | int | str] = {"usuarios": n_usuarios, "eventos": base.n_eventos}
     for i, ev in enumerate(etapas):
-        conv = "" if i == 0 else f" · conversão da etapa anterior {fmt_pct(atingiram[i] / atingiram[i - 1] if atingiram[i - 1] else None)}"
+        conv = ""
+        if i and atingiram[i - 1]:
+            geral[f"conv:{ev}"] = atingiram[i] / atingiram[i - 1]
+            conv = f" · conversão da etapa anterior {fmt_pct(geral[f'conv:{ev}'])}"
+        geral[f"atingiram:{ev}"] = atingiram[i]
         texto.append(f"- {ev}: {fmt_int(atingiram[i])}{conv}")
     if base.evento_erro:
         texto.append(f"- {base.evento_erro}: {fmt_int(n_erro)} "
                      f"({fmt_pct(n_erro / atingiram[-2] if atingiram[-2] else None)} de quem chegou em {etapas[-2]})")
 
     texto.append("dimensões disponíveis (grupos com n<50 aparecem como <50):")
-    geral: dict[str, float | int | str] = {"usuarios": n_usuarios, "eventos": base.n_eventos}
     for d in base.dimensoes:
         contagens = cur.execute(
             f"SELECT CAST({d} AS VARCHAR) AS valor, count(*) AS n FROM usuarios u {filtro} GROUP BY 1 ORDER BY 2 DESC", params
@@ -62,6 +66,12 @@ def panorama(base: BaseAnalitica, metade: str = "A", query_id: str = "Q00-A") ->
                      f"páginas com dados: {', '.join(base.paginas_com_dados)}")
     else:
         texto.append("sem fullstory.csv: não há medidas de atrito (dead click, rage click, tempo na tela).")
+    if base.tem_nps:
+        n_nps = cur.execute(f"SELECT count(*) FROM nps JOIN usuarios u USING (user_id_hash) {filtro}", params).fetchone()[0]
+        geral["respondentes_nps"] = int(n_nps)
+        texto.append(f"NPS: {fmt_int(n_nps)} respondentes (autosselecionados); comentários chegam só como contagens de temas.")
+    else:
+        texto.append("sem nps.csv: não há pistas do porquê vindas da voz do cliente.")
 
     return ResultadoConsulta(query_id=query_id, ferramenta="panorama", params={"metade": metade}, metade=metade,
                              fonte="misto", linhas=linhas, geral=geral, texto_llm="\n".join(texto))

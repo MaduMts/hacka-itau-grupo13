@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from config import MAX_FILTROS
 from contratos import SaidaDevin
 from motor.carga import BaseAnalitica
-from motor.consultas import DESCRICAO_FERRAMENTAS, DISPONIVEIS
+from motor.consultas import DESCRICAO_FERRAMENTAS, disponiveis
 
 _USA = {
     "funil": "segmentar_por, filtros",
@@ -29,14 +29,14 @@ def descrever_catalogo(base: BaseAnalitica, eventos: list[str]) -> str:
         "",
         "Ferramentas disponíveis:",
     ]
-    for nome in DISPONIVEIS:
+    for nome in disponiveis(base):
         linhas.append(f"- {nome}: {DESCRICAO_FERRAMENTAS[nome]} Usa: {_USA[nome]}.")
     linhas += ["", "Dimensões para segmentar_por: nenhum, " + ", ".join(base.dimensoes), "Valores válidos para filtros:"]
     for dim in base.dimensoes:
         linhas.append(f"- {dim}: " + ", ".join(base.valores[dim]))
     if base.tem_fullstory:
-        linhas.append("Páginas (atrito): " + ", ".join(base.paginas))
-    linhas.append("Eventos da jornada: " + ", ".join(eventos))
+        linhas.append("Páginas (atrito e tempo_na_pagina): " + ", ".join(base.paginas))
+    linhas.append("Eventos da jornada (sequencia): " + ", ".join(eventos))
     return "\n".join(linhas)
 
 

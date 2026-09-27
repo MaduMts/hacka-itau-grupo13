@@ -25,7 +25,7 @@ import pandas as pd
 from config import PASTA_DADOS, SEMENTE
 from gerador import padroes as P
 
-VERSAO_GERADOR = "1"
+VERSAO_GERADOR = "2"
 EVENTOS = ["card_lock_start", "card_select", "lock_reason_select", "lock_confirm",
            "lock_success", "lock_error", "unlock_start", "unlock_success"]
 _EV = {nome: i for i, nome in enumerate(EVENTOS)}
@@ -33,7 +33,8 @@ PAGINAS = list(P.MEDIANAS_S)
 TIPOS_FS = ["page_view", "click", "dead_click", "rage_click"]
 ELEMENTOS = [""] + sorted({e for lista in P.ELEMENTOS.values() for e in lista})
 _EL = {nome: i for i, nome in enumerate(ELEMENTOS)}
-VARIANTES = ("normal", "incompleta")
+VARIANTES = ("normal", "incompleta", "incorreta")
+PASTA_AMOSTRA = Path(__file__).resolve().parents[1] / "exemplos" / "amostra_csv"
 
 
 @dataclass
@@ -41,6 +42,7 @@ class DadosBrutos:
     tagueamento: pd.DataFrame
     fullstory: pd.DataFrame
     perfil: pd.DataFrame
+    nps: pd.DataFrame
 
 
 def _escolher(rng: np.random.Generator, opcoes: dict[str, float], n: int) -> np.ndarray:
@@ -207,7 +209,38 @@ def gerar(semente: int = SEMENTE, n_usuarios: int = P.N_USUARIOS) -> DadosBrutos
         "plataforma": pd.Categorical.from_codes(plat, categories=plataformas),
         "tempo_de_conta": pd.Categorical.from_codes(tempo_conta, categories=list(P.TEMPO_DE_CONTA)),
     })
-    return DadosBrutos(tagueamento=tagueamento, fullstory=fullstory, perfil=perfil)
+
+    # --- NPS: pista do porquê (sorteado por último, para não mudar os dados acima) ---
+    nps = _nps(rng, ids, combo == c_p1, faixa == f_60)
+    return DadosBrutos(tagueamento=tagueamento, fullstory=fullstory, perfil=perfil, nps=nps)
+
+
+def _nps(rng: np.random.Generator, ids: list[str], e_p1: np.ndarray, e_60: np.ndarray) -> pd.DataFrame:
+    """5% respondem; afetados pelos padrões são mais detratores e comentam os temas ligados a eles.
+    Um comentário carrega uma tentativa de injeção de prompt (o agente nunca recebe texto de NPS)."""
+    cfg = P.NPS
+    resp = np.flatnonzero(rng.random(len(ids)) < cfg["p_resposta"])
+    g_p1, g_p2 = e_p1[resp], e_60[resp]
+    afetado = g_p1 | g_p2
+    p_det = np.where(afetado, cfg["detratores_afetados"], cfg["detratores"])
+    p_pro = np.where(afetado, cfg["promotores_afetados"], cfg["promotores"])
+    u = rng.random(len(resp))
+    score = np.where(u < p_det, rng.integers(0, 7, len(resp)),
+                     np.where(u > 1 - p_pro, rng.integers(9, 11, len(resp)), rng.integers(7, 9, len(resp))))
+    escreve = rng.random(len(resp)) < cfg["p_comentario"]
+    temas = list(P.TEMAS_NPS)
+    tema = np.zeros(len(resp), dtype=np.int8)
+    for chave, mascara in (("p1", g_p1), ("p2", g_p2 & ~g_p1), ("base", ~afetado)):
+        probs = np.array([P.PROB_TEMAS[chave][t] for t in temas])
+        tema[mascara] = rng.choice(len(temas), size=int(mascara.sum()), p=probs / probs.sum())
+    modelo = rng.random(len(resp))
+    comentarios = []
+    for i in range(len(resp)):  # ~10 mil respondentes: um laço simples basta
+        opcoes = P.TEMAS_NPS[temas[tema[i]]]
+        comentarios.append(opcoes[int(modelo[i] * len(opcoes))] if escreve[i] else "")
+    if escreve.any():
+        comentarios[int(np.flatnonzero(escreve)[0])] = P.INJECAO_NPS
+    return pd.DataFrame({"user_id_hash": [ids[j] for j in resp], "score": score.astype(int), "comentario": comentarios})
 
 
 def _sub(valor, mask):
@@ -268,7 +301,7 @@ def _tabela_eventos(sess, ts, sess_usuario, ids, ids_sessao, combos, combo, plat
     })
 
 
-def salvar_csv(dados: DadosBrutos, pasta: Path, arquivos=("tagueamento", "fullstory", "perfil")) -> None:
+def salvar_csv(dados: DadosBrutos, pasta: Path, arquivos=("tagueamento", "fullstory", "perfil", "nps")) -> None:
     pasta.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
     for nome in arquivos:
@@ -308,10 +341,37 @@ def garantir_exemplo(variante: str = "normal", pasta: Path = PASTA_DADOS, sement
             shutil.rmtree(destino)
         destino.mkdir(parents=True)
         if variante == "incompleta":  # sem perfil.csv
-            for nome in ("tagueamento", "fullstory"):
+            for nome in ("tagueamento", "fullstory", "nps"):
                 shutil.copyfile(normal / f"{nome}.csv", destino / f"{nome}.csv")
+        elif variante == "incorreta":  # recorte do tagueamento com parte dos timestamps corrompida
+            _salvar_incorreta(normal / "tagueamento.csv", destino / "tagueamento.csv")
         (destino / "_gerado.json").write_text(json.dumps({**marca, "variante": destino.name}), encoding="utf-8")
     return destino
+
+
+def _salvar_incorreta(origem: Path, destino: Path) -> None:
+    cfg = P.INCORRETA
+    con = duckdb.connect()
+    con.execute(
+        f"""
+        COPY (
+            SELECT user_id_hash, session_id,
+                   CASE WHEN row_number() OVER (ORDER BY "timestamp", session_id, event_name) % {cfg['a_cada']} = 0
+                        THEN '{cfg['timestamp_invalido']}' ELSE "timestamp" END AS "timestamp",
+                   event_name, platform, app_version
+            FROM (SELECT * FROM read_csv(?, header = true, all_varchar = true)
+                  ORDER BY "timestamp", session_id, event_name LIMIT {cfg['linhas']})
+        ) TO '{destino.as_posix()}' (HEADER, DELIMITER ',')
+        """,
+        [origem.as_posix()],
+    )
+    con.close()
+
+
+def salvar_amostra(pasta: Path = PASTA_AMOSTRA, n_usuarios: int = 400) -> Path:
+    """Amostra pequena (commitada) só para mostrar o formato dos CSVs e testar o upload."""
+    salvar_csv(gerar(SEMENTE, n_usuarios), pasta)
+    return pasta
 
 
 def main() -> int:
@@ -319,8 +379,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Gera o dataset sintético de exemplo.")
     parser.add_argument("--variante", default="normal", choices=VARIANTES)
     parser.add_argument("--n", type=int, default=P.N_USUARIOS, help="número de usuários")
+    parser.add_argument("--amostra", action="store_true", help="grava a amostra pequena em exemplos/amostra_csv")
     args = parser.parse_args()
-    pasta = garantir_exemplo(args.variante, n_usuarios=args.n)
+    pasta = salvar_amostra() if args.amostra else garantir_exemplo(args.variante, n_usuarios=args.n)
     for arq in sorted(pasta.glob("*.csv")):
         print(f"{arq}  ({arq.stat().st_size / 1e6:.1f} MB)")
     return 0

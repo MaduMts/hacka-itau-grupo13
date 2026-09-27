@@ -86,3 +86,13 @@ def test_erro_do_agente_nao_reexecuta_em_rerun_e_permite_tentar_de_novo(pasta_no
     _botao(at, "Tentar de novo").click()
     at.run()
     assert _ClienteQueFalha.sessoes == 2
+
+
+def test_cenario_incorreto_bloqueia_e_nao_deixa_gerar():
+    at = AppTest.from_file(APP, default_timeout=180)
+    at.run()
+    at.selectbox[1].set_value("incorreta")
+    _botao(at, "Checar entrada").click()
+    at.run()
+    assert any("timestamp inválido" in e.value for e in at.error)
+    assert _botao(at, "Gerar dossiê").disabled

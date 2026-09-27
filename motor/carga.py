@@ -42,6 +42,7 @@ class BaseAnalitica:
     n_usuarios: int
     n_eventos: int
     paginas_com_dados: list[str] = field(default_factory=list)
+    temas_nps: dict[str, list[str]] = field(default_factory=dict)
 
     @property
     def eventos_funil(self) -> list[str]:
@@ -54,6 +55,13 @@ class BaseAnalitica:
     @property
     def paginas(self) -> list[str]:
         return list(self.jornada["paginas"])
+
+    @property
+    def eventos_jornada(self) -> list[str]:
+        eventos = list(self.jornada["eventos_funil"])
+        if self.evento_erro:
+            eventos.append(self.evento_erro)
+        return eventos + list(self.jornada.get("eventos_extras", []))
 
     def cursor(self) -> duckdb.DuckDBPyConnection:
         return self.con.cursor()
@@ -164,6 +172,16 @@ def preparar_base(
         )
         paginas_com_dados = [l[0] for l in con.execute("SELECT DISTINCT page FROM fs ORDER BY 1").fetchall()]
 
+    if tem_nps:
+        con.execute(
+            """
+            CREATE OR REPLACE TABLE nps AS
+            SELECT trim(user_id_hash) AS user_id_hash, TRY_CAST(score AS INTEGER) AS score,
+                   coalesce(comentario, '') AS comentario
+            FROM raw_nps WHERE trim(user_id_hash) IN (SELECT user_id_hash FROM usuarios)
+            """
+        )
+
     dimensoes = ["plataforma", "versao_app"] + (list(DIMENSOES_PERFIL) if tem_perfil else [])
     valores = {
         d: [l[0] for l in con.execute(f"SELECT DISTINCT CAST({d} AS VARCHAR) FROM usuarios ORDER BY 1").fetchall()]
@@ -176,4 +194,5 @@ def preparar_base(
         tem_perfil=tem_perfil, tem_fullstory=tem_fullstory, tem_nps=tem_nps,
         dimensoes=dimensoes, valores=valores, dados_hash=hash_arquivos(arquivos),
         n_usuarios=n_usuarios, n_eventos=n_eventos, paginas_com_dados=paginas_com_dados,
+        temas_nps={k: list(v) for k, v in contexto.squad.get("temas_nps", {}).items()},
     )

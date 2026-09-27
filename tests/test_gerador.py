@@ -60,3 +60,9 @@ def test_desbloqueio_rapido_em_cerca_de_14_por_cento_dos_bloqueios(dados):
     juntos = sucesso.merge(desbloqueio, on="session_id", suffixes=("_bloq", "_desb"))
     rapidos = ((juntos.timestamp_desb - juntos.timestamp_bloq) <= pd.Timedelta(minutes=10)).sum()
     assert 0.12 < rapidos / len(sucesso) < 0.16
+
+
+def test_nps_tem_cinco_por_cento_de_respondentes_e_uma_injecao(dados):
+    assert 0.045 < len(dados.nps) / len(dados.perfil) < 0.055
+    assert dados.nps.score.between(0, 10).all()
+    assert dados.nps.comentario.str.startswith("IGNORE AS INSTRUÇÕES").sum() == 1

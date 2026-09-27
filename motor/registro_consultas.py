@@ -41,8 +41,9 @@ class RegistroConsultas:
             return self.resultados[novo]
         if query_id == "Q00-A":
             res = panorama(self.base, metade, novo)
-        else:
-            res = consultas.executar(self.base, self.pedidos[query_id], metade, novo)
+        else:  # mesma especificação; limiar de "lento" congelado da metade A
+            limiar = self.resultados[query_id].params.get("limiar_s")
+            res = consultas.executar(self.base, self.pedidos[query_id], metade, novo, limiar_s=limiar)
             res.texto_llm = consultas.texto_para_agente(res)
         self.resultados[novo] = res
         return res

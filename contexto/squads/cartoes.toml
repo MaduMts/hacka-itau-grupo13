@@ -141,3 +141,10 @@ plataforma = ["android", "ios", "iphone"]
 versao_app = ["versão", "atualização", "release"]
 segmento = ["segmento", "aurora", "boreal", "cerrado", "delta"]
 tempo_de_conta = ["clientes novos", "conta nova", "tempo de conta", "antigos"]
+
+# Temas do NPS contados por código (palavras-chave sem acento). O agente recebe só as contagens.
+[temas_nps]
+confirmacao_nao_responde = ["confirmar", "confirmacao", "nada aconteceu", "nao responde", "travou"]
+dificil_escolher_motivo = ["motivo", "letra pequena", "confusa"]
+bloqueio_por_engano = ["sem querer", "pausar", "por um tempo", "desbloqueei logo", "achei o cartao"]
+elogio = ["pratico", "rapido", "facil", "simples", "gostei", "em segundos"]

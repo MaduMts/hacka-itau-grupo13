@@ -31,7 +31,7 @@ def _ic(ic: tuple[float, float] | None) -> str:
 
 def quem(h: Hipotese) -> str:
     grupo = h.candidata.evidencia_principal.grupo
-    if grupo is None:
+    if grupo is None or grupo == "todos":
         return "população toda (sem grupo de comparação)"
     la = h.linha_a
     comparacao = f": taxa {fmt_pct(la.taxa)} contra {fmt_pct(la.taxa_resto)} nos demais" if la and la.taxa_resto is not None else ""

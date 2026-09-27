@@ -17,6 +17,7 @@ from contexto.carregar import ContextoSquad, carregar_contexto, listar_squads
 from contratos import DecisaoPM, EntradaPM, Hipotese
 from dossie import ACAO, CAMPOS_TEXTO, decisao_de, gerar_markdown, gerar_pedido_research, resumo_verificacao, textos
 from entrada.checagem import checar_entrada
+from gabarito import conferir
 from gerador.gerar_dados import garantir_exemplo
 from motor.carga import localizar_arquivos
 from pipeline import Execucao, rodar_execucao
@@ -24,7 +25,8 @@ from registro import agora_iso
 from ui.componentes import dialogo_consulta, metricas_hipotese, selo
 from verificacao.numeros import verificar_candidata
 
-CENARIOS = {"normal": "Normal (todos os arquivos)", "incompleta": "Incompleta (sem perfil.csv)"}
+CENARIOS = {"normal": "Normal (todos os arquivos)", "incompleta": "Incompleta (sem perfil.csv)",
+            "incorreta": "Incorreta (timestamps inválidos)"}
 MODOS = {"roteirizado": "Sem rede (agente roteirizado)", "ao_vivo": "Ao vivo (Devin)"}
 ERROS = {
     "autenticacao": "A chave do Devin foi recusada. Confira a DEVIN_API_KEY no .env ou nos Secrets.",
@@ -362,6 +364,14 @@ def aba_revisao(exe: Execucao) -> None:
     with st.expander("Avisos"):
         for aviso in d.avisos:
             st.caption(f"• {aviso}")
+    if st.session_state.fonte.startswith("exemplo"):
+        with st.expander("Conferir com o gabarito dos dados sintéticos", icon=":material/fact_check:"):
+            st.caption("Os dados de exemplo têm padrões plantados. O agente precisa achar P1, P2 e P3, "
+                       "e o código não pode deixar as armadilhas T4 e T5 virarem evidência.")
+            itens = conferir(d, tem_perfil="perfil" in st.session_state.arquivos)
+            st.dataframe(pd.DataFrame([{"": "✅" if i.ok else "❌", "padrão": f"{i.id} · {i.descricao}",
+                                        "esperado": i.esperado, "no dossiê": i.encontrado} for i in itens]),
+                         hide_index=True)
 
 
 def _apendice(exe: Execucao) -> dict[str, str]:
