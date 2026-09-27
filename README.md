@@ -1,18 +1,22 @@
 # Agente Dossiê de Hipóteses
 
-**Hackathon Itaú · Grupo 13 · Case C · Pessoa: PM da squad de cartões**
+**Hackathon Itaú · Grupo 13 · Case C · Pessoa: PM de uma squad de produto digital**
 
 > ⚠️ **Protótipo de hackathon.** Todos os dados são **fictícios** (sintéticos, gerados com semente fixa e padrões plantados). O envio de pedidos à Research é **simulado**. Nada aqui usa dados reais do banco.
 
 ## A ideia em uma frase
 
-Queremos ajudar a PM da squad de cartões a transformar dados de FullStory e tagueamento em hipóteses priorizadas com evidência, quando precisa decidir o que investigar na jornada de bloqueio, porque hoje analisar milhões de eventos é manual e inviável. Saberemos que ajudamos se ela chegar a um dossiê verificável em minutos, sem números sem fonte.
+Queremos ajudar a PM de uma squad a transformar dados de FullStory e tagueamento em hipóteses priorizadas com evidência, quando precisa decidir o que investigar na jornada do produto, porque hoje analisar milhões de eventos é manual e inviável, e a squad inteira espera por essa decisão. Saberemos que ajudamos se ela chegar, em minutos, a duas hipóteses sobre o comportamento do usuário, cada uma com a fonte de onde a evidência foi tirada.
+
+**Por que a PM:** o agente conhece o contexto da empresa e da squad em que está inserido (produto, jornadas, dicionário de eventos tagueados, metas) e ataca um processo específico da PM: decidir o que investigar. Acelerando esse passo, a squad inteira anda mais rápido. Research, design e engenharia recebem hipóteses com evidência em vez de esperar por uma análise manual.
+
+A jornada de bloqueio/desbloqueio de cartão é só o **exemplo** usado nos dados sintéticos e na demo. O agente não depende dela: qualquer jornada com tagueamento e FullStory serve.
 
 ## O que o agente faz
 
-- **Entrada:** jornada (bloquear/desbloquear cartão), período e, opcionalmente, um palpite da PM ("acho que idosos travam na confirmação").
+- **Entrada:** contexto da squad (produto, jornadas, dicionário de eventos), a jornada a investigar, o período e, opcionalmente, um palpite da PM ("acho que idosos travam na confirmação").
 - **Ação:** o agente explora os dados com consultas executadas por código, gera hipóteses candidatas, tenta refutá-las numa metade separada dos dados e redige o dossiê.
-- **Resultado:** dossiê com hipóteses ranqueadas (quantos, quem, lift, n, fonte), separando o que o dado já responde do que só a Research responde ("por quê"), mais o registro da decisão da PM.
+- **Resultado:** dossiê com as **2 hipóteses mais fortes sobre o comportamento do usuário** (quantos, quem, lift, n), cada uma referenciando de onde a evidência foi tirada (o `query_id` da consulta que gerou o número), separando o que o dado já responde do que só a Research responde ("por quê"), mais o registro da decisão da PM.
 
 **Regra de ouro:** números saem de consultas executadas por código, nunca do LLM. O LLM planeja, escolhe consultas e redige; o código calcula e confere.
 
@@ -20,7 +24,7 @@ Queremos ajudar a PM da squad de cartões a transformar dados de FullStory e tag
 
 ```mermaid
 flowchart LR
-    A[Entrada da PM<br/>jornada + palpite] --> B[Checa a entrada<br/>colunas, datas, n]
+    A[Entrada da PM<br/>contexto + jornada + palpite] --> B[Checa a entrada<br/>colunas, datas, n]
     B --> C[Agente explora<br/>consultas na metade A]
     C --> D[Refutação<br/>replica na metade B]
     D --> E[Verificador<br/>todo número tem fonte]
@@ -57,7 +61,7 @@ Cada hipótese no dossiê traz: enunciado · quantos usuários afetados · quem 
 
 ## Dados sintéticos e gabarito
 
-Quatro arquivos CSV: cerca de 200 mil usuários, 1 milhão de eventos de tagueamento e uma amostra de FullStory de 10% das sessões (o dossiê avisa que esses números são extrapolados).
+Jornada de exemplo: bloqueio/desbloqueio de cartão. Quatro arquivos CSV: cerca de 200 mil usuários, 1 milhão de eventos de tagueamento e uma amostra de FullStory de 10% das sessões (o dossiê avisa que esses números são extrapolados).
 
 | Arquivo | Papel | Colunas mínimas |
 |---|---|---|
