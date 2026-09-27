@@ -75,3 +75,22 @@ def test_referencias_invalidas_e_causalidade_no_enunciado():
     assert verificar_candidata(_cand("ok", metrica="dead_click"), REG).refs_invalidas
     v = verificar_candidata(_cand("Os 60+ travam porque a lista é longa."), REG)
     assert v.avisos_causais and v.verificada  # causalidade não é número órfão; vira Hipótese nos rótulos
+
+
+def test_limites_das_faixas_de_tempo_nao_sao_numeros_de_resultado():
+    seq = ResultadoConsulta(query_id="Q09-A", ferramenta="sequencia", params={"segmentar_por": "nenhum", "janela_min": 30},
+                            metade="A", fonte="tagueamento",
+                            linhas=[LinhaResultado(grupo="todos", metrica="sequencia", n=79644, casos=10993, taxa=0.138,
+                                                   extras={"mediana_min": 2.1})],
+                            geral={"faixa:<1 min": 2797, "faixa:1–5 min": 6425, "faixa:5–10 min": 1771, "faixa:1–24 h": 1987})
+    reg = RegistroFalso(seq)
+    texto = ("13,8% desfazem em até 30 minutos, com mediana de 2,1 min; 2.797 em menos de 1 min, "
+             "6.425 entre 1 e 5 min e 1.987 entre 1 e 24 h (Q09-A).")
+    v = verificar_candidata(_cand(texto, qid="Q09-A", citados=("Q09-A",), grupo=None, metrica="sequencia"), reg)
+    assert v.verificada, v.orfaos
+
+
+def test_decomposicao_nao_e_causalidade_mas_verbos_causais_sao():
+    assert not verificar_candidata(_cand("É esse grupo que explica o abandono maior do android."), REG).avisos_causais
+    assert verificar_candidata(_cand("O redesign provoca o abandono na confirmação."), REG).avisos_causais
+    assert verificar_candidata(_cand("A tela nova resulta em mais abandono."), REG).avisos_causais

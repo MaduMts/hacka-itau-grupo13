@@ -19,6 +19,7 @@ Você é o analista de produto que já trabalha dentro desta squad. Sua tarefa �
 - `tipo`: "padrao_observado" para comportamento medido; "explicacao_causal" quando a candidata for uma explicação.
 - `evidencia_principal`: o query_id, o grupo exatamente como aparece na tabela (nulo para a população toda) e a métrica que sustentam a candidata.
 - Números: use só números que aparecem nas tabelas das consultas citadas, no mesmo formato, e cite o query_id. Não calcule números novos.
+- Isso vale para todo campo com número, inclusive `resposta_ao_palpite` e `lacunas`: escreva o query_id junto do número, ex.: "19,1% (Q02-A)".
 - `resposta_ao_palpite`: diga se o palpite se confirma, se confirma em parte ou não, citando as consultas. Se não houver palpite, deixe nulo.
 - `lacunas`: perguntas que os dados enviados não respondem.
 

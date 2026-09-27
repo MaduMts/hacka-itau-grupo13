@@ -72,7 +72,8 @@ class Orquestrador:
             saida = validar_saida(est.structured_output, rodada, fase)
         self.resultado.duracoes[rodada] = round(time.monotonic() - inicio, 1)
         self.registro.evento("agente", "rodada_publicada", rodada=rodada, fase=fase,
-                             segundos=self.resultado.duracoes[rodada], structured_output=saida.model_dump())
+                             segundos=self.resultado.duracoes[rodada], structured_output=saida.model_dump(),
+                             mensagens_no_chat=est.mensagens_do_agente())
         return saida
 
     def rodada_1(self, prompt: str, titulo: str, tags: list[str]) -> SaidaDevin:

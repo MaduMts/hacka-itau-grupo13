@@ -42,7 +42,14 @@ class EstadoSessao:
     @property
     def rodada(self) -> int | None:
         valor = (self.structured_output or {}).get("rodada")
-        return valor if isinstance(valor, int) else None
+        if isinstance(valor, str) and valor.strip().isdigit():
+            return int(valor)
+        return valor if isinstance(valor, int) and not isinstance(valor, bool) else None
+
+    def mensagens_do_agente(self, ultimas: int = 3) -> list[str]:
+        """Últimas mensagens que o agente escreveu no chat (ex.: perguntas), truncadas."""
+        do_agente = [m for m in self.mensagens if (m.get("type") or "").startswith("devin")]
+        return [str(m.get("message", ""))[:500] for m in do_agente[-ultimas:]]
 
 
 def _erro_http(status: int, metodo: str, caminho: str, trecho: str) -> ErroDevin:

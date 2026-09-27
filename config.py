@@ -29,7 +29,7 @@ FATOR_FULLSTORY = 10.0  # FullStory é amostra de 10% das sessões
 ORCAMENTO_CONSULTAS = 10
 MAX_CANDIDATAS = 6  # o procedimento pede 3 a 4; o código aceita até 6
 MODO_EXPLORACAO = os.getenv("MODO_EXPLORACAO", "rodadas")  # "rodadas" | "varredura"
-PROMPT_VERSAO = "v0.1"
+PROMPT_VERSAO = "v0.2"
 
 # --- Devin (API v1) ---
 DEVIN_API_BASE = os.getenv("DEVIN_API_BASE", "https://api.devin.ai/v1").rstrip("/")

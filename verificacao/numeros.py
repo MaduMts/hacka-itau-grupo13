@@ -17,8 +17,9 @@ from contratos import Candidata, ResultadoConsulta, SaidaDevin, Verificacao
 from motor.registro_consultas import RegistroConsultas
 
 NUM = r"\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:[,.]\d+)?"
-CAUSAL = re.compile(
-    r"\b(porque|pois|devido|por causa|causad[oa]s?|leva(?:m)? a|faz(?:em)? com que|em raz[aã]o de|gra[cç]as a|explica(?:m)?)\b",
+CAUSAL = re.compile(  # "explica" fica de fora: em "esse grupo explica 31% dos abandonos" é decomposição, não causa
+    r"\b(porque|por que|pois|devido|por causa|causad[oa]s?|provoca(?:m)?|resulta(?:m)? em|leva(?:m)? a|"
+    r"faz(?:em)? com que|em raz[aã]o de|gra[cç]as a)\b",
     re.IGNORECASE,
 )
 _APROX = re.compile(r"(cerca de|aproximadamente|aprox\.?|~|≈|quase|mais de|menos de|por volta de|em torno de)\s*$", re.IGNORECASE)
@@ -183,8 +184,24 @@ def rotulos_do_registro(registro: RegistroConsultas) -> list[str]:
         janela = r.params.get("janela_min")
         if janela is not None:
             rotulos.update({f"{janela} min", f"{janela} minutos"})
-        rotulos.update(k.split(":", 1)[1] for k in r.geral if k.startswith("faixa:"))  # "<1 min", "1–5 min"...
+        for chave in r.geral:
+            if chave.startswith("faixa:"):  # "<1 min", "1–5 min"... e cada limite solto ("5 min", "1 h")
+                rotulos.update(_limites_de_faixa(chave.split(":", 1)[1]))
     return sorted(rotulos)
+
+
+_UNIDADES = {"min": ("min", "minuto", "minutos"), "h": ("h", "hora", "horas"), "dia": ("dia", "dias")}
+
+
+def _limites_de_faixa(rotulo: str) -> set[str]:
+    """Rótulo da faixa e cada limite dela com as grafias comuns da unidade."""
+    variantes = {rotulo}
+    m = re.fullmatch(r"[<>]?(\d+)(?:\s*[–-]\s*(\d+))?\s*(min|h|dia)", rotulo.strip())
+    if m:
+        for numero in filter(None, m.group(1, 2)):
+            variantes.update(f"{numero} {u}" for u in _UNIDADES[m.group(3)])
+            variantes.update(f"{numero}{u}" for u in _UNIDADES[m.group(3)][:1])
+    return variantes
 
 
 def _conferir_texto(texto: str, campo: str, citados: set[str], registro: RegistroConsultas, rotulos: list[str],

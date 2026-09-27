@@ -119,3 +119,14 @@ def test_sessao_expirada_e_timeout():
     with pytest.raises(ErroDevin) as e:
         cli.aguardar_rodada("s1", 1, timeout_s=20, intervalo_s=5)
     assert e.value.tipo == "timeout"
+
+
+def test_rodada_como_texto_e_mensagens_do_agente():
+    from agente.cliente_devin import EstadoSessao
+    est = EstadoSessao("s1", "blocked", "blocked", {"rodada": "2"}, [
+        {"type": "initial_user_message", "message": "prompt"},
+        {"type": "devin_message", "message": "Rodada 2 publicada."},
+    ], {})
+    assert est.rodada == 2
+    assert est.mensagens_do_agente() == ["Rodada 2 publicada."]
+    assert EstadoSessao("s1", "blocked", None, {"rodada": True}, [], {}).rodada is None

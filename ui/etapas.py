@@ -45,7 +45,8 @@ ERROS = {
 
 def _estado() -> None:
     padrao = {"etapa": "entrada", "entrada": None, "arquivos": None, "checagem": None, "execucao": None,
-              "modo": "roteirizado", "fonte": "exemplo:normal", "parent_run_id": None, "executar": False,
+              "modo": "ao_vivo" if chave_devin() else "roteirizado", "fonte": "exemplo:normal", "parent_run_id": None,
+              "executar": False,
               "erro_execucao": None}
     for chave, valor in padrao.items():
         st.session_state.setdefault(chave, valor)
@@ -196,6 +197,9 @@ def tela_execucao(ctx: ContextoSquad) -> None:
     entrada: EntradaPM = st.session_state.entrada
     st.subheader("Gerando o dossiê")
     st.caption(f"Agente: {MODOS[st.session_state.modo]} · o código executa todas as consultas; o agente só vê agregados.")
+    if st.session_state.modo == "ao_vivo":
+        st.caption("Com o Devin, cada rodada leva cerca de 45 a 65 s: o dossiê costuma ficar pronto em 2 a 3 minutos. "
+                   "Dá para acompanhar a sessão pelo link abaixo.")
     if st.session_state.executar:
         st.session_state.update(executar=False, erro_execucao=None)
         exe = None
