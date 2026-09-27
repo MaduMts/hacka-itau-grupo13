@@ -59,6 +59,8 @@ def _erro_http(status: int, metodo: str, caminho: str, trecho: str) -> ErroDevin
 
 
 class ClienteDevin:
+    llm = "devin-v1"
+
     def __init__(
         self,
         chave: str | None,
@@ -170,12 +172,14 @@ class ClienteDevin:
         intervalo_s: float = DEVIN_INTERVALO_S,
         carencia_s: float = 60.0,
         cutucada: str | None = None,
+        diferente_de: dict[str, Any] | None = None,
         ao_consultar: Callable[[EstadoSessao, float], None] | None = None,
     ) -> EstadoSessao:
         """Espera o agente publicar o structured_output da `rodada` e parar.
 
         Se ele parar sem publicar depois de trabalhar (ou não acordar dentro da carência),
         manda uma única `cutucada`. Se parar de novo sem publicar, falha com tipo "formato".
+        `diferente_de` ignora uma publicação antiga (quando pedimos para republicar a mesma rodada).
         """
         inicio = marco = self._relogio()
         viu_trabalhando = cutucou = False
@@ -187,7 +191,8 @@ class ClienteDevin:
                 ao_consultar(est, agora - inicio)
             if est.status_enum in STATUS_FALHA:
                 raise ErroDevin("sessao_encerrada", f"A sessão do Devin parou com status '{est.status_enum}' antes da rodada {rodada}.")
-            if est.status_enum in STATUS_PRONTO and est.rodada == rodada:
+            nova = diferente_de is None or est.structured_output != diferente_de
+            if est.status_enum in STATUS_PRONTO and est.rodada == rodada and nova:
                 return est
             if est.status_enum in STATUS_PRONTO:
                 parado = parado + 1 if viu_trabalhando else parado
@@ -202,3 +207,40 @@ class ClienteDevin:
             if agora - inicio >= timeout_s:
                 raise ErroDevin("timeout", f"O Devin não concluiu a rodada {rodada} em {timeout_s:.0f} s.")
             self._dormir(intervalo_s)
+
+
+Roteiro = Callable[[int, list[str], Any], dict[str, Any]]
+
+
+class ClienteRoteirizado:
+    """Faz o papel do Devin sem rede: cada rodada devolve o que o `roteiro` calcular.
+
+    Mesma interface do ClienteDevin. Usado nos testes, no esqueleto e no modo demo (replay).
+    O orquestrador preenche `registro` com o RegistroConsultas da execução, para o roteiro
+    poder redigir candidatas a partir dos resultados reais.
+    """
+
+    llm = "roteirizado"
+
+    def __init__(self, roteiro: Roteiro, sessao_id: str = "roteiro-local"):
+        self.roteiro = roteiro
+        self.sessao_id = sessao_id
+        self.textos: list[str] = []
+        self.registro: Any = None
+
+    def criar_sessao(self, prompt: str, **_: Any) -> tuple[str, str]:
+        self.textos = [prompt]
+        return self.sessao_id, ""
+
+    def enviar_mensagem(self, session_id: str, mensagem: str) -> None:
+        self.textos.append(mensagem)
+
+    def aguardar_rodada(self, session_id: str, rodada: int, *, ao_consultar=None, **_: Any) -> EstadoSessao:
+        so = self.roteiro(rodada, self.textos, self.registro)
+        est = EstadoSessao(session_id, "blocked", "blocked", so, [], {"structured_output": so})
+        if ao_consultar:
+            ao_consultar(est, 0.0)
+        return est
+
+    def encerrar(self, session_id: str) -> None:
+        return None

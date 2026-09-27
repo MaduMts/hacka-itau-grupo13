@@ -9,6 +9,13 @@ missao = "Dar ao cliente controle rápido e seguro sobre os próprios cartões."
 pm = "PM da Squad Cartões (fictícia)"
 contato_research = "Research de Experiência Digital (fictício)"
 
+# Exemplos oferecidos quando o palpite da PM é vago.
+exemplos_palpite = [
+    "Acho que idosos travam na confirmação",
+    "Acho que o botão de confirmar não responde em alguma versão do Android",
+    "Acho que muita gente desbloqueia o cartão logo depois de bloquear",
+]
+
 [[metas]]
 descricao = "Reduzir o abandono do fluxo de bloqueio de cartão"
 indicador = "Usuários que iniciam o bloqueio (card_lock_start) e não chegam a lock_success"

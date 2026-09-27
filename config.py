@@ -41,7 +41,7 @@ DEVIN_TIMEOUT_RODADA_S = float(os.getenv("DEVIN_TIMEOUT_RODADA_S", "180"))
 SEMENTE = 20260801
 SAL_HOLDOUT = "g13-holdout-v1"
 PASTA_DADOS = RAIZ / "data" / "gerados"
-PASTA_REGISTROS = RAIZ / "registros"
+PASTA_REGISTROS = Path(os.getenv("PASTA_REGISTROS", str(RAIZ / "registros")))
 PASTA_CONTEXTO = RAIZ / "contexto"
 SQUAD_PADRAO = os.getenv("SQUAD_PADRAO", "cartoes")
 

@@ -164,6 +164,7 @@ class Hipotese(BaseModel):
     candidata: Candidata
     familia: Literal["comparativa", "comportamental"]
     fonte: Literal["tagueamento", "fullstory", "nps"]
+    dimensao: str | None = None  # segmentar_por da consulta principal
     linha_a: LinhaResultado | None = None
     linha_b: LinhaResultado | None = None
     linha_t: LinhaResultado | None = None
@@ -171,7 +172,7 @@ class Hipotese(BaseModel):
     rotulo: Rotulo
     regra: str
     motivo: str
-    status: Literal["principal", "research", "indicio", "descartada", "lacuna"]
+    status: Literal["principal", "evidencia_extra", "research", "indicio", "descartada", "lacuna"]
     verificacao: Verificacao = Field(default_factory=Verificacao)
     usuarios_afetados: int | None = None
     extrapolado: bool = False
@@ -218,6 +219,7 @@ class Dossie(BaseModel):
     meta: MetaExecucao
     entrada: EntradaPM
     principais: list[Hipotese] = Field(default_factory=list)
+    outras_evidencias: list[Hipotese] = Field(default_factory=list)
     research: list[Hipotese] = Field(default_factory=list)
     indicios: list[Hipotese] = Field(default_factory=list)
     descartadas: list[Hipotese] = Field(default_factory=list)
