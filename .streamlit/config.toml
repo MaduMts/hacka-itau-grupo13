@@ -1,0 +1,6 @@
+[server]
+# CSV de 1M linhas tem ~100 MB
+maxUploadSize = 300
+
+[browser]
+gatherUsageStats = false

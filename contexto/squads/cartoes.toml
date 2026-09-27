@@ -1,0 +1,136 @@
+# Contexto da SQUAD — o agente "mora" aqui. Carregado automaticamente em toda execução.
+# Exercício fictício (hackathon Itaú, grupo 13). Mantido pela própria squad.
+
+id = "cartoes"
+versao = "2026-09-26"
+nome = "Squad Cartões"
+produto = "App de conta PF, área de cartões"
+missao = "Dar ao cliente controle rápido e seguro sobre os próprios cartões."
+pm = "PM da Squad Cartões (fictícia)"
+contato_research = "Research de Experiência Digital (fictício)"
+
+[[metas]]
+descricao = "Reduzir o abandono do fluxo de bloqueio de cartão"
+indicador = "Usuários que iniciam o bloqueio (card_lock_start) e não chegam a lock_success"
+alvo = "no máximo 15% até o fim do 4º trimestre de 2026"
+
+[[metas]]
+descricao = "Reduzir chamados ao atendimento sobre bloqueio"
+indicador = "Chamados com motivo 'não consegui bloquear pelo app'"
+alvo = "-20% no semestre"
+
+[[jornadas]]
+id = "bloqueio_desbloqueio"
+nome = "Bloqueio e desbloqueio de cartão"
+eventos_funil = ["card_lock_start", "card_select", "lock_reason_select", "lock_confirm", "lock_success"]
+evento_erro = "lock_error"
+eventos_extras = ["unlock_start", "unlock_success"]
+paginas = ["selecao_cartao", "motivo_bloqueio", "confirmacao_bloqueio", "resultado_bloqueio", "desbloqueio"]
+pares_reversiveis = [["lock_success", "unlock_success"]]
+
+[dicionario_eventos.card_lock_start]
+descricao = "Cliente tocou em 'Bloquear cartão'"
+pagina = "selecao_cartao"
+
+[dicionario_eventos.card_select]
+descricao = "Escolheu qual cartão bloquear"
+pagina = "selecao_cartao"
+
+[dicionario_eventos.lock_reason_select]
+descricao = "Escolheu o motivo do bloqueio (perda, roubo, temporário, outro)"
+pagina = "motivo_bloqueio"
+
+[dicionario_eventos.lock_confirm]
+descricao = "Tocou em 'Confirmar bloqueio'"
+pagina = "confirmacao_bloqueio"
+
+[dicionario_eventos.lock_success]
+descricao = "Bloqueio concluído"
+pagina = "resultado_bloqueio"
+
+[dicionario_eventos.lock_error]
+descricao = "Falha ao bloquear"
+pagina = "resultado_bloqueio"
+
+[dicionario_eventos.unlock_start]
+descricao = "Tocou em 'Desbloquear'"
+pagina = "desbloqueio"
+
+[dicionario_eventos.unlock_success]
+descricao = "Desbloqueio concluído"
+pagina = "desbloqueio"
+
+[paginas.selecao_cartao]
+descricao = "Lista de cartões para escolher qual bloquear"
+elementos = ["item_cartao", "btn_voltar"]
+
+[paginas.motivo_bloqueio]
+descricao = "Lista de motivos do bloqueio"
+elementos = ["lista_motivos", "opcao_motivo_perda", "opcao_motivo_roubo", "opcao_motivo_temporario", "opcao_motivo_outro", "btn_continuar"]
+
+[paginas.confirmacao_bloqueio]
+descricao = "Resumo e botão de confirmação do bloqueio"
+elementos = ["btn_confirmar_bloqueio", "btn_cancelar"]
+
+[paginas.resultado_bloqueio]
+descricao = "Mensagem de sucesso ou erro"
+elementos = ["btn_concluir", "link_desbloquear"]
+
+[paginas.desbloqueio]
+descricao = "Tela de desbloqueio do cartão"
+elementos = ["btn_desbloquear"]
+
+[[versoes_app]]
+plataforma = "android"
+versao = "8.3.0"
+lancamento = 2026-06-10
+nota = "Cartão virtual na tela inicial"
+
+[[versoes_app]]
+plataforma = "android"
+versao = "8.4.0"
+lancamento = 2026-07-22
+nota = "Redesign da tela de confirmação do bloqueio"
+
+[[versoes_app]]
+plataforma = "android"
+versao = "8.5.0"
+lancamento = 2026-08-12
+nota = "Correções gerais e melhorias de desempenho"
+
+[[versoes_app]]
+plataforma = "android"
+versao = "8.6.0-beta"
+lancamento = 2026-08-18
+nota = "Beta fechado para poucos clientes"
+
+[[versoes_app]]
+plataforma = "ios"
+versao = "8.4.1"
+lancamento = 2026-07-24
+nota = "Redesign da tela de confirmação do bloqueio"
+
+[[versoes_app]]
+plataforma = "ios"
+versao = "8.5.0"
+lancamento = 2026-08-12
+nota = "Correções gerais"
+
+# Termos que a PM costuma usar -> etapa, página, métrica ou dimensão.
+# Usado para reconhecer um palpite específico (e marcar como vago quando não casa com nada).
+[sinonimos]
+selecao_cartao = ["seleção do cartão", "selecionar cartão", "escolher o cartão", "lista de cartões"]
+motivo_bloqueio = ["motivo", "razão", "escolha do motivo", "lista de motivos"]
+confirmacao_bloqueio = ["confirmação", "confirmar", "botão de confirmar", "confirma"]
+resultado_bloqueio = ["resultado", "tela de sucesso", "mensagem de erro"]
+desbloqueio = ["desbloqueio", "desbloquear", "desbloqueiam"]
+erro = ["erro", "falha", "falham", "não funciona"]
+abandono = ["abandono", "abandonam", "desistem", "desistência", "travam", "trava", "travar", "não terminam"]
+dead_click = ["dead click", "clique morto", "botão não responde", "não responde"]
+rage_click = ["rage click", "clique de raiva", "clicam várias vezes", "irritação"]
+tempo = ["demoram", "demora", "lentidão", "lento", "tempo"]
+faixa_etaria = ["idosos", "idoso", "60+", "terceira idade", "mais velhos", "jovens", "idade"]
+plataforma = ["android", "ios", "iphone"]
+versao_app = ["versão", "atualização", "release"]
+segmento = ["segmento", "aurora", "boreal", "cerrado", "delta"]
+tempo_de_conta = ["clientes novos", "conta nova", "tempo de conta", "antigos"]
