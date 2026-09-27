@@ -224,9 +224,11 @@ class Dossie(BaseModel):
     indicios: list[Hipotese] = Field(default_factory=list)
     descartadas: list[Hipotese] = Field(default_factory=list)
     lacunas: list[str] = Field(default_factory=list)
+    proximos_passos: list[str] = Field(default_factory=list)  # ex.: o que depende do perfil, quando ele falta
     resposta_ao_palpite: str | None = None
     avisos: list[str] = Field(default_factory=list)
     decisoes: list[DecisaoPM] = Field(default_factory=list)
+    memoria: list[str] = Field(default_factory=list)  # decisões anteriores da squad que o agente recebeu
 
 
 # --- JSON Schema para o Devin ---

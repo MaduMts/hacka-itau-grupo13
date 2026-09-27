@@ -14,6 +14,7 @@ from agente.cliente_devin import ClienteDevin, ClienteRoteirizado, ErroDevin
 from agente.roteiros import roteiro_gabarito
 from config import PASTA_DADOS, SQUAD_PADRAO, chave_devin
 from contexto.carregar import ContextoSquad, carregar_contexto, listar_squads
+from contexto.memoria import decisoes_recentes, texto_memoria
 from contratos import DecisaoPM, EntradaPM, Hipotese
 from dossie import ACAO, CAMPOS_TEXTO, decisao_de, gerar_markdown, gerar_pedido_research, resumo_verificacao, textos
 from entrada.checagem import checar_entrada
@@ -112,8 +113,15 @@ def cabecalho(ctx: ContextoSquad) -> None:
 def tela_entrada(ctx: ContextoSquad) -> None:
     with st.expander("O que o agente já sabe sobre a squad (carregado automaticamente)", icon=":material/menu_book:"):
         jornadas = ctx.jornadas()
-        st.caption("A PM não precisa digitar contexto: ele vem da configuração da squad e da empresa.")
+        st.caption("A PM não precisa digitar contexto: ele vem da configuração da squad e da empresa, "
+                   "mais a memória das decisões recentes da squad.")
         st.code(ctx.texto_para_agente(jornadas[0]["id"]), language=None)
+        memoria = texto_memoria(decisoes_recentes(ctx.id))
+        st.markdown("**Memória da squad (decisões recentes da PM)**")
+        if memoria:
+            st.markdown("\n".join(f"- {m}" for m in memoria))
+        else:
+            st.caption("Nenhuma decisão registrada ainda nesta squad.")
 
     anterior: EntradaPM | None = st.session_state.entrada
     with st.form("form_entrada"):
@@ -365,6 +373,8 @@ def aba_revisao(exe: Execucao) -> None:
         st.markdown("### Lacunas")
         for lacuna in d.lacunas:
             st.info(lacuna, icon=":material/help_outline:")
+    if d.proximos_passos:
+        _proximos_passos(exe)
     with st.expander("Avisos"):
         for aviso in d.avisos:
             st.caption(f"• {aviso}")
@@ -376,6 +386,24 @@ def aba_revisao(exe: Execucao) -> None:
             st.dataframe(pd.DataFrame([{"": "✅" if i.ok else "❌", "padrão": f"{i.id} · {i.descricao}",
                                         "esperado": i.esperado, "no dossiê": i.encontrado} for i in itens]),
                          hide_index=True)
+
+
+def _proximos_passos(exe: Execucao) -> None:
+    """Modo comportamental: o que depende do perfil e o pedido (simulado) de acesso ao dono do dado."""
+    ctx = _contexto()
+    st.markdown("### Próximos passos (sem perfil do cliente)")
+    st.markdown("\n".join(f"- {p}" for p in exe.dossie.proximos_passos))
+    pedidos = [e for e in exe.registro.ler() if e["evento"] == "acesso_perfil_solicitado_simulado"]
+    if st.button("Solicitar acesso ao perfil ao dono do dado (simulado)", icon=":material/key:", disabled=bool(pedidos)):
+        politicas = ctx.empresa.get("politicas_dados", {})
+        exe.registro.evento("pm", "acesso_perfil_solicitado_simulado", dono=ctx.dono_da_fonte("perfil"),
+                            finalidade="Descobrir quem é afetado pelas hipóteses deste dossiê (melhoria de UX)",
+                            lia_id=politicas.get("lia_id"), ripd_id=politicas.get("ripd_id"))
+        st.rerun()
+    if pedidos:
+        st.success(f"Pedido registrado em {pedidos[-1]['ts']} para {pedidos[-1]['dados']['dono']} "
+                   "(simulação: nada foi enviado). Antes do acesso: LIA, RIPD e só faixas via produto de dados governado.",
+                   icon=":material/how_to_reg:")
 
 
 def _apendice(exe: Execucao) -> dict[str, str]:

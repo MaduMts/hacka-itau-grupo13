@@ -15,6 +15,7 @@ from agente.prompts import prompt_rodada_1, prompt_sha
 from agente.protocolo import ErroProtocolo, descrever_catalogo
 from config import FATOR_FULLSTORY, MAX_CANDIDATAS, PROMPT_VERSAO, SEMENTE
 from contexto.carregar import ContextoSquad
+from contexto.memoria import decisoes_recentes, texto_memoria
 from contratos import Candidata, Dossie, EntradaPM, MetaExecucao, Verificacao
 from entrada.checagem import ResultadoChecagem
 from motor.carga import preparar_base
@@ -112,11 +113,14 @@ def rodar_execucao(
         reg.evento("codigo", "panorama", query_id=panorama.query_id, usuarios=base.n_usuarios, eventos=base.n_eventos,
                    dados_hash=base.dados_hash)
 
+        memoria = texto_memoria(decisoes_recentes(contexto.id, ignorar_run=run_id))
+        reg.evento("sistema", "memoria_da_squad", decisoes=memoria)
         orq = Orquestrador(cliente, consultas, reg, avisar)
         exe.agente = orq.resultado
         prompt = prompt_rodada_1(
             contexto.texto_para_agente(entrada.jornada), entrada, contexto.jornada(entrada.jornada)["nome"],
             checagem.palpite_status, checagem.lacunas, panorama, descrever_catalogo(base, contexto.eventos(entrada.jornada)),
+            memoria=memoria,
         )
         plano = orq.rodada_1(prompt, titulo=f"Dossiê · {contexto.nome} · {run_id}", tags=["dossie-hipoteses", contexto.id, run_id])
         avisar("codigo", f"Executando {min(len(plano.consultas), orq.orcamento)} consultas do plano na metade A")
@@ -149,6 +153,13 @@ def rodar_execucao(
             {"id": h.id, "titulo": h.candidata.titulo, "rotulo": h.rotulo.value, "regra": h.regra, "motivo": h.motivo,
              "status": h.status, "query_ids": h.query_ids} for h in todas])
 
+        proximos = []
+        if not base.tem_perfil:  # modo comportamental: o "quem" depende de um acesso que a squad ainda não tem
+            proximos = [f"Descobrir quem é afetado (faixa etária, segmento, tempo de conta) em “{h.candidata.titulo}”."
+                        for h in grupos["principais"] + grupos["outras_evidencias"] if h.rotulo.value == "Evidência"]
+            proximos.append(f"Pedir acesso ao perfil ao dono do dado ({contexto.dono_da_fonte('perfil')}), via produto de "
+                            "dados governado, com LIA e RIPD antes de qualquer uso.")
+
         resposta = saida.resposta_ao_palpite
         if resposta and geral.orfaos:
             resposta = marcar_sem_fonte(resposta, geral.orfaos)
@@ -163,6 +174,7 @@ def rodar_execucao(
             principais=grupos["principais"], outras_evidencias=grupos["outras_evidencias"], research=grupos["research"],
             indicios=grupos["indicios"], descartadas=grupos["descartadas"],
             lacunas=list(dict.fromkeys(checagem.lacunas + list(saida.lacunas))),
+            proximos_passos=proximos, memoria=memoria,
             resposta_ao_palpite=resposta,
             avisos=avisos_padrao(consultas, getattr(cliente, "llm", "roteirizado"), dados_sinteticos) + checagem.avisos,
         )

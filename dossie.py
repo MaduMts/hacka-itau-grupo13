@@ -129,6 +129,8 @@ def gerar_markdown(d: Dossie, nome_squad: str, nome_jornada: str, apendice: dict
                 partes.append("")
     if d.lacunas:
         partes += ["## Lacunas", *[f"- ⚪ {l}" for l in d.lacunas], ""]
+    if d.proximos_passos:
+        partes += ["## Próximos passos", *[f"- {p}" for p in d.proximos_passos], ""]
     if apendice:
         partes += ["## Apêndice: consultas", "Cada número do dossiê sai de uma destas consultas, executadas por código."]
         for qid, texto in apendice.items():
