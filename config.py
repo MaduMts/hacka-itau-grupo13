@@ -36,6 +36,7 @@ DEVIN_API_BASE = os.getenv("DEVIN_API_BASE", "https://api.devin.ai/v1").rstrip("
 DEVIN_MAX_ACU = int(os.getenv("DEVIN_MAX_ACU", "2"))
 DEVIN_INTERVALO_S = float(os.getenv("DEVIN_INTERVALO_S", "3"))
 DEVIN_TIMEOUT_RODADA_S = float(os.getenv("DEVIN_TIMEOUT_RODADA_S", "180"))
+DEMO_ATRASO_S = float(os.getenv("DEMO_ATRASO_S", "1.5"))  # pausa por rodada no replay da demo
 
 # --- Dados e registros ---
 SEMENTE = 20260801

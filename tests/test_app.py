@@ -10,6 +10,10 @@ def _botao(at, rotulo):
     return next(b for b in at.button if b.label == rotulo)
 
 
+def _modo(at, modo):
+    next(r for r in at.radio if r.label == "Agente").set_value(modo)
+
+
 def test_fluxo_completo_com_agente_roteirizado(pasta_normal):
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
@@ -17,6 +21,7 @@ def test_fluxo_completo_com_agente_roteirizado(pasta_normal):
     assert at.title[0].value == "Dossiê de Hipóteses"
 
     at.text_input[1].set_value("Acho que idosos travam na confirmação")  # [0] = nome da PM
+    _modo(at, "roteirizado")
     _botao(at, "Checar entrada").click()
     at.run()
     assert not at.exception
@@ -42,6 +47,7 @@ def test_entrada_incompleta_segue_e_declara_lacuna(pasta_incompleta):
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
     at.selectbox[1].set_value("incompleta")  # [0] = jornada
+    _modo(at, "roteirizado")
     _botao(at, "Checar entrada").click()
     at.run()
     assert not at.exception
@@ -75,6 +81,7 @@ def test_erro_do_agente_nao_reexecuta_em_rerun_e_permite_tentar_de_novo(pasta_no
     _ClienteQueFalha.sessoes = 0
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
+    _modo(at, "roteirizado")
     _botao(at, "Checar entrada").click()
     at.run()
     _botao(at, "Gerar dossiê").click()
@@ -92,7 +99,26 @@ def test_cenario_incorreto_bloqueia_e_nao_deixa_gerar():
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
     at.selectbox[1].set_value("incorreta")
+    _modo(at, "roteirizado")
     _botao(at, "Checar entrada").click()
     at.run()
     assert any("timestamp inválido" in e.value for e in at.error)
     assert _botao(at, "Gerar dossiê").disabled
+
+
+def test_demo_gravada_usa_a_entrada_da_gravacao_e_roda_sem_rede(pasta_normal):
+    at = AppTest.from_file(APP, default_timeout=180)
+    at.run()
+    at.text_input[1].set_value("outro palpite qualquer")
+    _modo(at, "gravado")
+    _botao(at, "Checar entrada").click()
+    at.run()
+    assert any("Demo gravada: reproduz a execução real do Devin" in i.value for i in at.info)
+    assert at.session_state.entrada.palpite == "Acho que idosos travam na confirmação"  # entrada da gravação
+    _botao(at, "Gerar dossiê").click()
+    at.run()
+    assert not at.exception, at.exception
+    exe = at.session_state.execucao
+    assert exe.dossie.meta.llm == "gravado"
+    grupos = {h.candidata.evidencia_principal.grupo for h in exe.dossie.principais}
+    assert grupos == {"android 8.4.0", "60+"}

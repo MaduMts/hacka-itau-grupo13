@@ -11,8 +11,9 @@ import pandas as pd
 import streamlit as st
 
 from agente.cliente_devin import ClienteDevin, ClienteRoteirizado, ErroDevin
+from agente.gravacao import ClienteGravado, carregar
 from agente.roteiros import roteiro_gabarito
-from config import PASTA_DADOS, SQUAD_PADRAO, chave_devin
+from config import DEMO_ATRASO_S, PASTA_DADOS, SQUAD_PADRAO, chave_devin
 from contexto.carregar import ContextoSquad, carregar_contexto, listar_squads
 from contexto.memoria import decisoes_recentes, texto_memoria
 from contratos import DecisaoPM, EntradaPM, Hipotese
@@ -28,7 +29,7 @@ from verificacao.numeros import verificar_candidata
 
 CENARIOS = {"normal": "Normal (todos os arquivos)", "incompleta": "Incompleta (sem perfil.csv)",
             "incorreta": "Incorreta (timestamps inválidos)"}
-MODOS = {"roteirizado": "Sem rede (agente roteirizado)", "ao_vivo": "Ao vivo (Devin)"}
+MODOS = {"ao_vivo": "Ao vivo (Devin)", "gravado": "Demo gravada (sem rede)", "roteirizado": "Teste sem rede (roteirizado)"}
 ERROS = {
     "autenticacao": "A chave do Devin foi recusada. Confira a DEVIN_API_KEY no .env ou nos Secrets.",
     "cota": "A cota do Devin desta chave acabou. Troque a chave (outra licença) ou use o modo sem rede.",
@@ -38,6 +39,8 @@ ERROS = {
     "sessao_encerrada": "A sessão do agente foi encerrada antes de terminar.",
     "formato": "O agente não publicou a resposta no formato combinado.",
     "config": "Falta configurar a chave do Devin.",
+    "gravacao": "A demo gravada não bate com estes dados. Use os dados de exemplo (cenário normal) "
+                "ou regrave com scripts/gravar_demo.py.",
 }
 
 
@@ -46,7 +49,7 @@ ERROS = {
 
 def _estado() -> None:
     padrao = {"etapa": "entrada", "entrada": None, "arquivos": None, "checagem": None, "execucao": None,
-              "modo": "ao_vivo" if chave_devin() else "roteirizado", "fonte": "exemplo:normal", "parent_run_id": None,
+              "modo": _modos_disponiveis()[0], "fonte": "exemplo:normal", "parent_run_id": None,
               "executar": False,
               "erro_execucao": None}
     for chave, valor in padrao.items():
@@ -80,8 +83,18 @@ def _salvar_uploads(enviados: dict) -> dict[str, Path]:
     return localizar_arquivos(pasta)
 
 
+def _modos_disponiveis() -> list[str]:
+    """Ao vivo se há chave; demo gravada se há gravação; o roteirizado sempre existe (teste sem rede)."""
+    return ([m for m, ok in (("ao_vivo", bool(chave_devin())), ("gravado", carregar() is not None)) if ok]
+            + ["roteirizado"])
+
+
 def _cliente(modo: str):
-    return ClienteDevin(chave_devin()) if modo == "ao_vivo" else ClienteRoteirizado(roteiro_gabarito)
+    if modo == "ao_vivo":
+        return ClienteDevin(chave_devin())
+    if modo == "gravado":
+        return ClienteGravado(carregar(), atraso_s=DEMO_ATRASO_S)
+    return ClienteRoteirizado(roteiro_gabarito)
 
 
 # --- Cabeçalho e barra lateral ---
@@ -142,10 +155,11 @@ def tela_entrada(ctx: ContextoSquad) -> None:
         with st.expander("Enviar CSVs (tagueamento obrigatório; os demais opcionais)"):
             for nome in ("tagueamento", "fullstory", "perfil", "nps"):
                 enviados[nome] = st.file_uploader(f"{nome}.csv", type="csv", key=f"up_{nome}")
-        modos = list(MODOS) if chave_devin() else ["roteirizado"]
+        modos = _modos_disponiveis()
         modo = st.radio("Agente", modos, format_func=MODOS.get, horizontal=True,
                         index=modos.index(st.session_state.modo) if st.session_state.modo in modos else 0,
-                        help=None if chave_devin() else "Sem DEVIN_API_KEY configurada: só o modo sem rede está disponível.")
+                        help="Demo gravada: reproduz uma execução real do Devin sem rede, com a entrada da gravação. "
+                             + ("" if chave_devin() else "Sem DEVIN_API_KEY configurada, o modo ao vivo fica indisponível."))
         enviar = st.form_submit_button("Checar entrada", type="primary", icon=":material/fact_check:")
 
     if not enviar:
@@ -153,6 +167,10 @@ def tela_entrada(ctx: ContextoSquad) -> None:
     if not isinstance(periodo, tuple) or len(periodo) != 2:
         st.error("Escolha a data inicial e a final do período.")
         return
+    if modo == "gravado":  # a demo reproduz a gravação: mesma entrada e mesmos dados de exemplo
+        gravada = EntradaPM(**carregar()["entrada"])
+        jornada, periodo, palpite, fonte, cenario = (gravada.jornada, (gravada.periodo_inicio, gravada.periodo_fim),
+                                                     gravada.palpite or "", "exemplo", "normal")
     if fonte == "exemplo":
         arquivos = localizar_arquivos(_pasta_exemplo(cenario))
         rotulo_fonte = f"exemplo:{cenario}"
@@ -170,12 +188,25 @@ def tela_entrada(ctx: ContextoSquad) -> None:
     _ir("checagem")
 
 
+def _explicar_demo() -> None:
+    gravacao = carregar()
+    if not gravacao:
+        return
+    quando = gravacao["gravado_em"][:16].replace("T", " às ")
+    sessao = f" ([sessão original]({gravacao['sessao_original']}))" if gravacao.get("sessao_original") else ""
+    st.info(f"Demo gravada: reproduz a execução real do Devin de {quando}{sessao}, com a mesma entrada "
+            f"(palpite “{gravacao['entrada'].get('palpite')}”, dados de exemplo). As consultas rodam de verdade aqui; "
+            "só as respostas do agente vêm da gravação.", icon=":material/play_circle:")
+
+
 # --- Tela 2: checagem ---
 
 
 def tela_checagem(ctx: ContextoSquad) -> None:
     chk = st.session_state.checagem
     st.subheader("Checagem da entrada")
+    if st.session_state.modo == "gravado":
+        _explicar_demo()
     for texto in chk.ok:
         st.success(texto, icon=":material/check_circle:")
     for texto in chk.bloqueios:
@@ -205,6 +236,8 @@ def tela_execucao(ctx: ContextoSquad) -> None:
     entrada: EntradaPM = st.session_state.entrada
     st.subheader("Gerando o dossiê")
     st.caption(f"Agente: {MODOS[st.session_state.modo]} · o código executa todas as consultas; o agente só vê agregados.")
+    if st.session_state.modo == "gravado":
+        _explicar_demo()
     if st.session_state.modo == "ao_vivo":
         st.caption("Com o Devin, cada rodada leva cerca de 45 a 65 s: o dossiê costuma ficar pronto em 2 a 3 minutos. "
                    "Dá para acompanhar a sessão pelo link abaixo.")

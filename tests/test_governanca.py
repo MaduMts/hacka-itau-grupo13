@@ -21,11 +21,16 @@ def _botao(at, rotulo):
     return next(b for b in at.button if b.label == rotulo)
 
 
+def _modo(at, modo):
+    next(r for r in at.radio if r.label == "Agente").set_value(modo)
+
+
 def _ate_o_resultado(cenario="normal", palpite="Acho que idosos travam na confirmação"):
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
     at.selectbox[1].set_value(cenario)
     at.text_input[1].set_value(palpite)
+    _modo(at, "roteirizado")
     _botao(at, "Checar entrada").click()
     at.run()
     _botao(at, "Gerar dossiê").click()
@@ -106,6 +111,7 @@ def test_palpite_vago_mostra_sugestoes_e_deixa_seguir():
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
     at.text_input[1].set_value("o app é ruim")
+    _modo(at, "roteirizado")
     _botao(at, "Checar entrada").click()
     at.run()
     assert any("Palpite vago" in w.value for w in at.warning)
@@ -117,6 +123,7 @@ def test_upload_das_amostras_passa_pela_checagem():
     at = AppTest.from_file(APP, default_timeout=180)
     at.run()
     at.radio[0].set_value("upload")
+    _modo(at, "roteirizado")
     for i, nome in enumerate(("tagueamento", "fullstory", "perfil", "nps")):
         at.file_uploader[i].set_value((f"{nome}.csv", (PASTA_AMOSTRA / f"{nome}.csv").read_bytes(), "text/csv"))
     _botao(at, "Checar entrada").click()

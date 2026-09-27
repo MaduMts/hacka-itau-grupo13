@@ -1,0 +1,233 @@
+{
+  "versao": 1,
+  "gravado_em": "2026-09-27T06:07:38-03:00",
+  "run_id_original": "20260927-060535-64e6",
+  "llm_original": "devin-v1",
+  "sessao_original": "https://app.devin.ai/sessions/29533a16fb674150a34453f067fe3f8a",
+  "prompt_versao": "v0.2",
+  "prompt_sha": "3fa3f02176f4fdfd",
+  "contexto_sha": "f350878acf4cbfff",
+  "dados_hash": "2cb107ab4c3d6c4c",
+  "entrada": {
+    "squad": "cartoes",
+    "jornada": "bloqueio_desbloqueio",
+    "periodo_inicio": "2026-08-01",
+    "periodo_fim": "2026-08-30",
+    "palpite": "Acho que idosos travam na confirmação",
+    "pm": "PM da Squad Cartões",
+    "fonte_dados": "exemplo:normal"
+  },
+  "rodadas": [
+    {
+      "rodada": 1,
+      "segundos": 47.1,
+      "structured_output": {
+        "rodada": 1,
+        "fase": "plano",
+        "consultas": [
+          {
+            "ferramenta": "funil",
+            "segmentar_por": "faixa_etaria",
+            "filtros": [],
+            "pagina": null,
+            "tipo_atrito": null,
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Testar o palpite: abandono em lock_confirm e taxa de erro por faixa etária, com lift do 60+."
+          },
+          {
+            "ferramenta": "funil",
+            "segmentar_por": "plataforma",
+            "filtros": [],
+            "pagina": null,
+            "tipo_atrito": null,
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Ver se o abandono por etapa difere entre android e ios (base ampla antes de descer ao específico)."
+          },
+          {
+            "ferramenta": "funil",
+            "segmentar_por": "versao_app",
+            "filtros": [],
+            "pagina": null,
+            "tipo_atrito": null,
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "O redesign da confirmação entrou em 8.4.0/8.4.1; comparar abandono em lock_confirm e lock_error entre versões."
+          },
+          {
+            "ferramenta": "funil",
+            "segmentar_por": "segmento",
+            "filtros": [],
+            "pagina": null,
+            "tipo_atrito": null,
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Checar se algum segmento (ex.: Delta, Cerrado) concentra abandono ou erro."
+          },
+          {
+            "ferramenta": "atrito",
+            "segmentar_por": "faixa_etaria",
+            "filtros": [],
+            "pagina": "confirmacao_bloqueio",
+            "tipo_atrito": "dead_click",
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Palpite: se 60+ 'trava' na confirmação, dead click em btn_confirmar_bloqueio deve ter lift nessa faixa."
+          },
+          {
+            "ferramenta": "atrito",
+            "segmentar_por": "versao_app",
+            "filtros": [],
+            "pagina": "confirmacao_bloqueio",
+            "tipo_atrito": "rage_click",
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Separar efeito da tela redesenhada (versão) do efeito de idade no atrito da confirmação."
+          },
+          {
+            "ferramenta": "tempo_na_pagina",
+            "segmentar_por": "faixa_etaria",
+            "filtros": [],
+            "pagina": "confirmacao_bloqueio",
+            "tipo_atrito": null,
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Medir se 60+ demora mais na confirmação (lentidão sem abandono também é padrão relevante)."
+          },
+          {
+            "ferramenta": "atrito",
+            "segmentar_por": "plataforma",
+            "filtros": [],
+            "pagina": "motivo_bloqueio",
+            "tipo_atrito": "dead_click",
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "A maior perda do funil geral é card_select→lock_reason_select (92,3%, Q00-A); investigar atrito na lista de motivos."
+          },
+          {
+            "ferramenta": "sequencia",
+            "segmentar_por": "faixa_etaria",
+            "filtros": [],
+            "pagina": null,
+            "tipo_atrito": null,
+            "evento_a": "lock_success",
+            "evento_b": "unlock_success",
+            "janela_min": 30,
+            "motivo": "Par reversível: bloqueio seguido de desbloqueio rápido pode indicar bloqueio acidental ou confusão, por faixa etária."
+          },
+          {
+            "ferramenta": "temas_nps",
+            "segmentar_por": "faixa_etaria",
+            "filtros": [],
+            "pagina": null,
+            "tipo_atrito": null,
+            "evento_a": null,
+            "evento_b": null,
+            "janela_min": null,
+            "motivo": "Pista qualitativa: temas citados e % detratores por faixa etária, para orientar perguntas de Research."
+          }
+        ],
+        "candidatas": [],
+        "resposta_ao_palpite": null,
+        "lacunas": []
+      }
+    },
+    {
+      "rodada": 2,
+      "segundos": 70.8,
+      "structured_output": {
+        "rodada": 2,
+        "fase": "candidatas",
+        "consultas": [],
+        "candidatas": [
+          {
+            "tipo": "padrao_observado",
+            "titulo": "Android 8.4.0 concentra o abandono na confirmação",
+            "enunciado": "Usuários em android 8.4.0 que chegam em lock_reason_select abandonam antes de lock_confirm em 19,1%, contra 4,9% dos demais (lift 3,90 ▲, n=9.197, Q03-A), respondendo por 31,3% de todos os abandonos dessa etapa. Todas as outras versões, inclusive android 8.5.0 (4,8%) e ios 8.4.1 (4,5%), ficam abaixo da taxa geral de 6,4% (Q03-A). O contraste android × ios na mesma etapa (7,6% vs 4,8%, lift 1,59 ▲, Q02-A) acompanha esse grupo. Na amostra FullStory, android 8.4.0 não tem rage click elevado em confirmacao_bloqueio (1,0%, lift 0,67, Q06-A).",
+            "evidencia_principal": {
+              "query_id": "Q03-A",
+              "grupo": "android 8.4.0",
+              "metrica": "abandono:lock_confirm"
+            },
+            "query_ids_citados": [
+              "Q03-A",
+              "Q02-A",
+              "Q06-A"
+            ],
+            "o_que_o_dado_responde": "Que o abandono na etapa de confirmação está concentrado em uma versão específica (android 8.4.0, redesign da tela de confirmação) e não em faixa etária, segmento ou plataforma como um todo; que a versão seguinte (8.5.0) não apresenta o mesmo padrão; e que o abandono não vem acompanhado de rage click na tela.",
+            "o_que_so_a_research_responde": "O que acontece na tela de confirmação do 8.4.0 que faz o usuário sair sem tocar em confirmar: botão fora da área visível, tela em branco, travamento, texto que gera dúvida, ou os usuários já atualizaram e a sessão foi contada na versão antiga. Também se esses usuários voltam e concluem depois em outra versão.",
+            "pergunta_para_research": "Em testes com aparelhos na versão android 8.4.0, o que o cliente vê e faz na tela de confirmação do bloqueio e por que sai sem confirmar? Há algum bug conhecido de renderização corrigido em 8.5.0?"
+          },
+          {
+            "tipo": "padrao_observado",
+            "titulo": "60+ abandona na escolha do motivo, não na confirmação",
+            "enunciado": "Usuários 60+ que chegam em card_select abandonam antes de lock_reason_select em 15,5%, contra 6,6% dos demais (lift 2,33 ▲, n=11.626, Q01-A), somando 24,4% dos abandonos dessa etapa. Nas demais etapas o 60+ não se destaca: abandono em lock_confirm 6,7% (lift 1,05) e lock_error 3,3% (lift 0,89) (Q01-A). No NPS, 28,8% dos respondentes 60+ citam o tema dificil_escolher_motivo, contra 4,7% dos demais (lift 6,15 ▲, Q10-A).",
+            "evidencia_principal": {
+              "query_id": "Q01-A",
+              "grupo": "60+",
+              "metrica": "abandono:lock_reason_select"
+            },
+            "query_ids_citados": [
+              "Q01-A",
+              "Q10-A",
+              "Q08-A"
+            ],
+            "o_que_o_dado_responde": "Em qual etapa o grupo 60+ sai do fluxo (tela motivo_bloqueio) e que o tema de dificuldade para escolher o motivo aparece com muito mais frequência nesse grupo no NPS. O dead click em motivo_bloqueio é baixo em ambas as plataformas (2,1% geral, Q08-A), então não parece ser toque em elemento que não responde.",
+            "o_que_so_a_research_responde": "Por que a lista de motivos trava o 60+: não encontra motivo que se aplique (ex.: bloqueio preventivo), não entende a diferença entre perda/roubo/temporário, receio de consequência do motivo escolhido, ou não percebe o btn_continuar. Também se esse cliente desiste ou vai ao atendimento.",
+            "pergunta_para_research": "O que passa pela cabeça do cliente 60+ ao ver a lista de motivos do bloqueio? Qual motivo ele procura e não encontra, e o que ele faz quando não consegue escolher?"
+          },
+          {
+            "tipo": "padrao_observado",
+            "titulo": "60+ é muito mais detrator no NPS e quase não elogia",
+            "enunciado": "Entre respondentes do NPS, 43,7% dos 60+ são detratores, contra 26,2% dos demais (lift 1,67 ▲, n=604, Q10-A). O tema elogio aparece em 6,0% dos 60+ contra 23,3% dos demais (lift 0,26, Q10-A). Os temas confirmacao_nao_responde (7,8%, lift 1,11) e bloqueio_por_engano (7,5%, lift 0,89) não se diferenciam nesse grupo (Q10-A). NPS é autosselecionado: pista, não evidência.",
+            "evidencia_principal": {
+              "query_id": "Q10-A",
+              "grupo": "60+",
+              "metrica": "detrator"
+            },
+            "query_ids_citados": [
+              "Q10-A"
+            ],
+            "o_que_o_dado_responde": "Que a insatisfação declarada do 60+ com a jornada é bem maior que a dos demais e que o único tema que se destaca nesse grupo é a dificuldade de escolher o motivo, coerente com o ponto de abandono medido no funil.",
+            "o_que_so_a_research_responde": "Se a insatisfação vem da jornada de bloqueio em si, do resultado (não conseguiu bloquear e ligou para o atendimento) ou de uma percepção geral do app; e quanto dessa insatisfação se traduz nos chamados 'não consegui bloquear pelo app'.",
+            "pergunta_para_research": "Entre clientes 60+ detratores, o que exatamente os frustrou no bloqueio de cartão e o que fizeram depois de não concluir (ligaram, foram à agência, tentaram de novo)?"
+          },
+          {
+            "tipo": "padrao_observado",
+            "titulo": "Um em sete bloqueios é desfeito em até 30 minutos",
+            "enunciado": "13,8% dos usuários com lock_success fazem unlock_success em até 30 minutos, com mediana de 2,1 min entre os eventos (n=79.644, Q09-A). A taxa é praticamente igual em todas as faixas etárias (de 13,7% a 14,0%, lifts entre 0,99 e 1,01, Q09-A). Na distribuição, 2.797 usuários desbloqueiam em menos de 1 min e 6.425 entre 1 e 5 min (Q09-A). No NPS, 8,2% dos respondentes citam bloqueio_por_engano, sem diferença por faixa etária (Q10-A).",
+            "evidencia_principal": {
+              "query_id": "Q09-A",
+              "grupo": null,
+              "metrica": "sequencia"
+            },
+            "query_ids_citados": [
+              "Q09-A",
+              "Q10-A"
+            ],
+            "o_que_o_dado_responde": "O volume e a velocidade da reversão do bloqueio e que ela é homogênea entre idades; ou seja, não é um comportamento de um grupo específico.",
+            "o_que_so_a_research_responde": "Se o desbloqueio rápido é bloqueio por engano (cartão errado, toque acidental), teste do recurso (ver se funciona), uso intencional do bloqueio temporário, ou consequência de o cliente perceber que o motivo escolhido não era o que queria.",
+            "pergunta_para_research": "Quando o cliente bloqueia e desbloqueia em poucos minutos, o que ele estava tentando fazer? Bloqueou o cartão certo? Sabia que o bloqueio seria imediato?"
+          }
+        ],
+        "resposta_ao_palpite": "Não se confirma. Os 60+ não travam na confirmação: abandono em lock_confirm de 6,7% (lift 1,05, Q01-A), dead click em confirmacao_bloqueio de 6,9% (lift 1,11, Q05-A) e apenas 22,3% lentos na tela (lift 0,88, Q07-A), tudo sem destaque. O abandono na confirmação é da versão android 8.4.0 (19,1%, lift 3,90 ▲, Q03-A), em todas as idades. Onde o 60+ trava é uma etapa antes, na escolha do motivo: 15,5% de abandono contra 6,6% dos demais (lift 2,33 ▲, Q01-A), com 28,8% dos respondentes 60+ do NPS citando dificuldade de escolher o motivo (Q10-A).",
+        "lacunas": [
+          "O que ocorre na tela de confirmação do android 8.4.0 (bug visual, botão inacessível, sessão perdida) não é observável nos dados agregados; só teste de dispositivo ou logs técnicos respondem.",
+          "Quais motivos os usuários escolhem (perda, roubo, temporário, outro) por faixa etária e se o 60+ escolhe mais 'outro'; o catálogo não desagrega lock_reason_select por motivo.",
+          "Se os usuários que abandonam retornam e concluem o bloqueio depois (fora da sessão) ou abrem chamado 'não consegui bloquear pelo app'; não há cruzamento com atendimento.",
+          "android 8.6.0-beta apresenta lock_error em 45,8% (n=72, n<300, Q03-A): indício pequeno demais para evidência, mas merece checagem técnica antes do rollout.",
+          "Tempo e atrito na página motivo_bloqueio segmentados por faixa etária (só consultamos dead click por plataforma, Q08-A); não sabemos se o 60+ demora mais ou tenta tocar em elementos que não respondem nessa tela."
+        ]
+      }
+    }
+  ]
+}

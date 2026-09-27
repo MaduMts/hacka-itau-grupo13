@@ -9,6 +9,7 @@ import tempfile
 
 os.environ["DEVIN_API_KEY"] = ""
 os.environ["PASTA_REGISTROS"] = tempfile.mkdtemp(prefix="registros_teste_")
+os.environ["DEMO_ATRASO_S"] = "0"
 
 import pytest  # noqa: E402
 
